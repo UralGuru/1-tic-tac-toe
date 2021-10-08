@@ -1,18 +1,24 @@
 const CROSS = 'X';
 const ZERO = 'O';
 const EMPTY = ' ';
-let arrsize = prompt("Введите размерность масссива", 3);
-let usedCells=0;
-let isZero = false;
-let GridArray =createArray();
-let IsWin= false;
+let countClick = 0;
+let sizeArray = prompt("Введите размерность масссива", 3);
+let winSymbolCross = CROSS.repeat(sizeArray);
+let winSymbolZero = ZERO.repeat(sizeArray);
+
+let isCross = true;  //для чередования
+let win = false;
+let arrayClick = [];
+createArray(sizeArray);
+let winLine = [];
+
 const container = document.getElementById('fieldWrapper');
 
 startGame();
 addResetListener();
 
 function startGame () {
-    renderGrid(arrsize);
+    renderGrid(sizeArray);
 }
 
 function renderGrid (dimension) {
@@ -30,105 +36,134 @@ function renderGrid (dimension) {
     }
 }
 
-function createArray(){
-    let arr=[];
-    let arr2=[];
-    for(let i=0;i<arrsize;i++){
-        for(let j=0;j<arrsize;j++){
-            arr2.push(EMPTY);
-        }
-        arr.push(arr2);
-        arr2=[];
-    }
-    return arr; 
-}
-
-function findWinner (){
-    for (let i = 0; i <= GridArray.length; i = i + 2)
-	{
-	    if((GridArray[0][0 + i] == GridArray[1][1]) && (GridArray[1][1] == GridArray[2][2- i])
-            && ((GridArray[0][0 + i]==ZERO)|| GridArray[0][0 + i]==CROSS)){ 
-                renderSymbolInCell(GridArray[i][0], 0, i, '#f00');
-                renderSymbolInCell(GridArray[i][0], 1, 1, '#f00');
-                renderSymbolInCell(GridArray[i][0], 2, 2-i, '#f00');
-                alert(`Выйграл игрок использующий ${GridArray[0][0+i]}`)
-                IsWin= true;	
-            }
-	}
-
-	for (let i = 0; i < 3; i++) 
-	{
-	    if(GridArray[i][0] == GridArray[i][1] && GridArray[i][1] == GridArray[i][ 2]
-            && (GridArray[i][0]==ZERO|| GridArray[i][0]==CROSS)){
-	            renderSymbolInCell(GridArray[i][0], i, 0, '#f00');
-                renderSymbolInCell(GridArray[i][0], i, 1, '#f00');
-                renderSymbolInCell(GridArray[i][0], i, 2, '#f00');
-                IsWin= true;	
-                alert(`Выйграл игрок использующий ${GridArray[i][0]}`)
-
-            }
-              
-	    if(GridArray[0][i] == GridArray[1][i] && GridArray[1][i] == GridArray[2][i] 
-            && (GridArray[0][i]==ZERO||GridArray[0][i]==CROSS)){
-                renderSymbolInCell(GridArray[1][i], 1, i, '#f00');
-                renderSymbolInCell(GridArray[1][i], 2, i, '#f00');
-                renderSymbolInCell(GridArray[1][i], 0, i, '#f00');
-                IsWin= true;	
-                alert(`Выйграл игрок использующий ${GridArray[1][i]}`)
-            }
-	}
-	}
-
-
-
-
-
-function resetClickHandler () {
-    console.log('reset!');
-    IsWin=false;
-    isZero=false;
-    usedCells = 0;
-    arrsize= prompt("Введите размерность масссива", 3);
-    startGame();
-    GridArray = createArray();
-    for(i=0;i<GridArray.length;i++)
-        for(j=0;j<GridArray[0].length;j++)
-            renderSymbolInCell(EMPTY, i, j);
-
-}
-
 
 
 
 
 function cellClickHandler (row, col) {
     // Пиши код тут
+    move(CROSS, row, col, sizeArray)
     console.log(`Clicked on cell: ${row}, ${col}`);
-    if(!IsWin){
-    if(GridArray[row][col]==EMPTY|| GridArray[row][col]==undefined){
-        if (isZero){
-            GridArray[row][col]=ZERO;
-            usedCells++;
-            renderSymbolInCell(ZERO, row, col);
-            isZero=false;
-        }
-        else{
-            GridArray[row][col]=CROSS;
-            usedCells++
-            renderSymbolInCell(CROSS, row, col);
-            isZero = true;
-        }
-        findWinner();
-        if (usedCells==GridArray.length**2 && !IsWin)
-            alert("Победила дружба")
-        
-    }
-       
 
-    }     
+
     /* Пользоваться методом для размещения символа в клетке так:
         renderSymbolInCell(ZERO, row, col);
      */
+}
+
+
+function move(symbol, row, col, sizeArray){
+    if(arrayClick[col][row] === " " && !win){
+        if (isCross){
+            renderSymbolInCell(CROSS, row, col);
+            addSimbolInArray(CROSS, row, col);
+            isCross=false;
+            checked(CROSS, arrayClick, sizeArray);
+        }
+        else{
+            renderSymbolInCell(ZERO, row, col);
+            addSimbolInArray(ZERO, row, col);
+            isCross = true;
+            checked(ZERO, arrayClick, sizeArray)
+        }
+    }
+}
+
+
+function createArray(sizeArray){
+    for(let i = 0; i < sizeArray; i++){
+        arrayClick[i] = []
+    }
+    for(let i = 0; i < sizeArray; i++){
+        for(let j = 0; j < sizeArray; j++){
+          arrayClick[i][j] = ' ';
+        }
+    }
+}
+
+function addSimbolInArray(symbol, row, col){
+    arrayClick[col][row] = symbol;
+}
+
+function checked(symbol, arrayClick, sizeArray){
+    countClick++;
+    let diagonal = checkDiagonal(symbol, arrayClick, sizeArray);
+    let lines = checkLines(symbol, arrayClick, sizeArray);
+    
+    if (diagonal || lines) {
+        colorSymbolsWinLines(symbol, arrayClick, sizeArray)
+        win = true; 
+        alert(`Winning for ${symbol}`);
+    }
+    if(countClick === sizeArray**2 && win === false) alert('Победила дружба!');
+}
+
+function checkDiagonal(symbol, arrayClick, sizeArray){
+    let toRight = true;
+    let toLeft = true;
+    for(let i=0; i<sizeArray; i++){
+        toRight = toRight && (arrayClick[i][i] === symbol);
+        toLeft = toLeft && (arrayClick[sizeArray-i-1][i] === symbol);
+        
+        if(toLeft && winLine.indexOf(i)===-1){
+            winLine.push(i);
+            if(winLine.length === 3) colorSymbolsWinDiag(symbol, winLine, direction = 'left', sizeArray);
+        }
+
+        if(toRight && winLine.indexOf(i)===-1){
+            winLine.push(i);
+            if(winLine.length === 3) colorSymbolsWinDiag(symbol, winLine, direction = 'right', sizeArray);
+        }
+    }
+    if (toLeft || toRight) return true;
+    return false;
+}
+
+function checkLines(symbol, arrayClick, sizeArray){
+    for(let i=0; i<sizeArray; i++){
+        cols = true;
+        rows = true;
+        for(let j=0; j<sizeArray; j++){
+            cols = cols && (arrayClick[i][j] === symbol);
+            rows = rows && (arrayClick[j][i] === symbol);
+        }
+        if(cols || rows) {return true}
+    }
+    return false;
+}
+
+//покрас победных значений в линиях в красный
+function colorSymbolsWinLines(symbol, arrayClick, sizeArray){
+    let testCol = [];
+    let testRow = [];
+
+    for(let s in arrayClick){
+        testCol.push(arrayClick[s].join(''));
+        let str ='';
+        for(let j=0; j<sizeArray; j++){str += arrayClick[j][s]};
+        testRow.push(str);
+    }
+
+    if(testRow.indexOf(winSymbolCross) !== -1) {
+        for(let i=0; i<sizeArray; i++) renderSymbolInCell (symbol, testRow.indexOf(winSymbolCross), i, color = '#f00');
+    }
+    if(testRow.indexOf(winSymbolZero) !== -1) {
+        for(let i=0; i<sizeArray; i++) renderSymbolInCell (symbol, testRow.indexOf(winSymbolZero), i, color = '#f00');
+    }
+    if(testCol.indexOf(winSymbolCross) !== -1){
+        for(let i=0; i<sizeArray; i++) renderSymbolInCell (symbol, i, testCol.indexOf(winSymbolCross), color = '#f00');
+    }
+    if(testCol.indexOf(winSymbolZero) !== -1){
+        for(let i=0; i<sizeArray; i++) renderSymbolInCell (symbol, i, testCol.indexOf(winSymbolZero), color = '#f00');
+    }
+
+}
+//покрас победных значений в диагоналях в красный
+function colorSymbolsWinDiag(symbol, winLine, direction, sizeArray){
+    for(let item in winLine){
+        if (direction === 'left') renderSymbolInCell (symbol, sizeArray-item-1, item, color = '#f00');
+        if (direction === 'right') renderSymbolInCell (symbol, item, item, color = '#f00');
+    }
 }
 
 function renderSymbolInCell (symbol, row, col, color = '#333') {
@@ -136,7 +171,6 @@ function renderSymbolInCell (symbol, row, col, color = '#333') {
 
     targetCell.textContent = symbol;
     targetCell.style.color = color;
-   
 }
 
 function findCell (row, col) {
@@ -149,9 +183,16 @@ function addResetListener () {
     resetButton.addEventListener('click', resetClickHandler);
 }
 
-
-
-
+function resetClickHandler () {
+    console.log('reset!');
+    win = false;
+    sizeArray = prompt("Введите размерность масссива", 3);
+    startGame();
+    createArray(sizeArray)
+    for(i=0;i<sizeArray;i++)
+        for(j=0;j<sizeArray;j++)
+            renderSymbolInCell(EMPTY, i, j);
+}
 /* Test Function */
 /* Победа первого игрока */
 function testWin () {
@@ -163,7 +204,6 @@ function testWin () {
     clickOnCell(1, 2);
     clickOnCell(2, 1);
 }
-
 /* Ничья */
 function testDraw () {
     clickOnCell(2, 0);
